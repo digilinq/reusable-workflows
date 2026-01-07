@@ -75,11 +75,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Copy artifact and Dockerfile
+      - name: Get latest JAR file
+        id: jar
         run: |
-          mkdir staging
-          cp ${{ inputs.artifact-path }} staging
-          cp ${{ inputs.docker-file }} staging
+          JAR=$(ls -t target/*.jar | head -n 1)
+          echo "jar=$JAR" >> $GITHUB_OUTPUT
+
+      - name: Use JAR
+        run: |
+          echo "Jar file is: ${{ steps.jar.outputs.jar }}"
+
+      - name: Copy artifact and optional Dockerfile
+        run: |
+          set -e
+      
+          mkdir -p staging
+          cp "${{ inputs.artifact-path }}" staging
+      
+          if [ -n "${{ inputs.docker-file }}" ] && [ -f "${{ inputs.docker-file }}" ]; then
+            echo "Copying Dockerfile: ${{ inputs.docker-file }}"
+            cp "${{ inputs.docker-file }}" staging
+          else
+            echo "No Dockerfile provided or file does not exist, skipping"
+          fi
+
+      - name: Copy artifact (with default fallback)
+        run: |
+          set -e
+          
+          mkdir -p staging
+          
+          if [ -n "${{ inputs.artifact-path }}" ] && [ -f "${{ inputs.artifact-path }}" ]; then
+            echo "Using provided artifact: ${{ inputs.artifact-path }}"
+            cp "${{ inputs.artifact-path }}" staging/
+          else
+            echo "artifact-path not provided or file missing, using target/*.jar"
+            cp target/*.jar staging/
+          fi
 
       - name: upload artifact ${{ inputs.artifact-name }}
         uses: actions/upload-artifact@v6
