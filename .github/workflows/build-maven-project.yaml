@@ -61,13 +61,17 @@ jobs:
 
       - name: Build artifact
         run: |
-          script="$GITHUB_WORKSPACE/ci/build.sh"
-          if [ -f "./ci/build.sh" ]; then
-            script="./ci/build.sh"
-          fi
-          echo "Running $script"
+          set -e
+          
           git config --global --add safe.directory '*'
-          sh "$script"
+          
+          if [ -f "./ci/build1.sh" ]; then
+            echo "Running custom build script: ci/build.sh"
+            sh ./ci/build.sh
+          else
+            echo "ci/build.sh not found, running default Maven build"
+            mvn --batch-mode --no-transfer-progress --update-snapshots package
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
