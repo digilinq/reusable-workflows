@@ -85,6 +85,17 @@ jobs:
         run: |
           echo "Jar file is: ${{ steps.jar.outputs.jar }}"
 
+      - name: Get JAR from Maven
+        id: jar1
+        run: |
+          JAR=$(mvn -q -Dexec.executable=echo \
+            -Dexec.args='${project.build.directory}/${project.build.finalName}.jar' \
+            --non-recursive exec:exec)
+          
+          echo "jar=$JAR" >> $GITHUB_OUTPUT
+
+      - run: echo "Jar file is ${{ steps.jar1.outputs.jar }}"
+
       - name: Copy artifact and optional Dockerfile
         run: |
           set -e
