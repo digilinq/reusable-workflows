@@ -24,7 +24,7 @@ on:
         description: The path to the Dockerfile
         type: string
         required: false
-        default: 'deployment/Dockerfile'
+        default: './Dockerfile'
       artifact-name:
         description: The name of the artifact to upload
         type: string
