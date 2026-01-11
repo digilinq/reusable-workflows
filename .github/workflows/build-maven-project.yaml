@@ -68,7 +68,9 @@ jobs:
           
           echo "jar=$JAR" >> $GITHUB_OUTPUT
 
-      - run: echo "Jar file is ${{ steps.jar.outputs.jar }}"
+      - name: Print JAR file name
+        run: |
+          echo "Jar file is ${{ steps.jar.outputs.jar }}"
 
       - name: Build artifact
         run: |
@@ -85,6 +87,16 @@ jobs:
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if jar file is exists
+        run: |
+          JAR="${{ steps.jar.outputs.jar }}"
+          if [ ! -f "$JAR" ]; then
+            echo "JAR file $JAR does not exist!"
+            exit 1
+          else
+            echo "JAR file $JAR found."
+          fi
 
       - name: Get latest JAR file
         run: |
