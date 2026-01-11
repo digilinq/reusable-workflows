@@ -26,16 +26,10 @@ on:
         required: false
         default: 'deployment/Dockerfile'
       artifact-name:
-        description: The name of the artifact
+        description: The name of the artifact to upload
         type: string
         required: false
         default: 'artifact'
-      artifact-path:
-        description: The path to the artifact
-        type: string
-        required: false
-        default: 'artifact.tgz'
-
 jobs:
   build-maven-project:
     name: Build maven project
@@ -117,37 +111,15 @@ jobs:
           mkdir -p staging
           cp "${{ steps.jar-file.outputs.jar }}" staging/
 
-      - name: List  staging directory
-        run: |
-          echo "Contents of staging directory:"
-          ls -la staging/ 
-
-      - name: Copy artifact and optional Dockerfile
+      - name: Copy Dockerfile if exists
         run: |
           set -e
-      
           mkdir -p staging
-          cp "${{ inputs.artifact-path }}" staging
-      
           if [ -n "${{ inputs.docker-file }}" ] && [ -f "${{ inputs.docker-file }}" ]; then
             echo "Copying Dockerfile: ${{ inputs.docker-file }}"
-            cp "${{ inputs.docker-file }}" staging
+            cp "${{ inputs.docker-file }}" staging/
           else
             echo "No Dockerfile provided or file does not exist, skipping"
-          fi
-
-      - name: Copy artifact (with default fallback)
-        run: |
-          set -e
-          
-          mkdir -p staging
-          
-          if [ -n "${{ inputs.artifact-path }}" ] && [ -f "${{ inputs.artifact-path }}" ]; then
-            echo "Using provided artifact: ${{ inputs.artifact-path }}"
-            cp "${{ inputs.artifact-path }}" staging/
-          else
-            echo "artifact-path not provided or file missing, using target/*.jar"
-            cp target/*.jar staging/
           fi
 
       - name: upload artifact ${{ inputs.artifact-name }}
