@@ -24,18 +24,12 @@ on:
         description: The path to the Dockerfile
         type: string
         required: false
-        default: 'deployment/Dockerfile'
+        default: './Dockerfile'
       artifact-name:
-        description: The name of the artifact
+        description: The name of the artifact to upload
         type: string
         required: false
         default: 'artifact'
-      artifact-path:
-        description: The path to the artifact
-        type: string
-        required: false
-        default: 'artifact.tgz'
-
 jobs:
   build-maven-project:
     name: Build maven project
@@ -59,26 +53,77 @@ jobs:
         with:
           maven-version: ${{ inputs.maven-version != '' && inputs.maven-version || '3.8.2' }}
 
-      - name: Build artifact
+      - name: Get JAR from Maven
+        id: jar
         run: |
-          script="$GITHUB_WORKSPACE/ci/build.sh"
-          if [ -f "./ci/build.sh" ]; then
-            script="./ci/build.sh"
-          fi
-          echo "Running $script"
-          git config --global --add safe.directory '*'
-          sh "$script"
+          JAR=$(mvn -q -Dexec.executable=echo \
+            -Dexec.args='${project.build.directory}/${project.build.finalName}.jar' \
+            --non-recursive exec:exec)
+          
+          echo "jar=$JAR" >> $GITHUB_OUTPUT
+
+      - name: Print JAR file name
+        run: |
+          echo "Jar file is ${{ steps.jar.outputs.jar }}"
+
+      - name: Build artifact
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Copy artifact and Dockerfile
         run: |
-          mkdir staging
-          cp ${{ inputs.artifact-path }} staging
-          cp ${{ inputs.docker-file }} staging
+          set -e
+          
+          git config --global --add safe.directory '*'
+          
+          if [ -f "./ci/build1.sh" ]; then
+            echo "Running custom build script: ci/build.sh"
+            sh ./ci/build.sh
+          else
+            echo "ci/build.sh not found, running default Maven build"
+            mvn --batch-mode --no-transfer-progress --update-snapshots package
+          fi
+
+      - name: Check if jar file is exists
+        run: |
+          JAR="${{ steps.jar.outputs.jar }}"
+          if [ ! -f "$JAR" ]; then
+            echo "JAR file $JAR does not exist!"
+            exit 1
+          else
+            echo "JAR file $JAR found."
+          fi
+
+      - name: Get latest JAR file
+        id: jar-file
+        run: |
+          JAR=$(ls -t target/*.jar 2>/dev/null | head -n 1)
+          if [ -z "$JAR" ]; then
+            echo "No JAR file found in target/"
+            exit 1
+          fi          
+          echo "jar=$JAR" >> $GITHUB_OUTPUT      
+
+      - name: Use JAR
+        run: |
+          echo "Jar file is: ${{ steps.jar-file.outputs.jar }}"
+
+      - name: Create staging directory and copy JAR
+        run: |
+          mkdir -p staging
+          cp "${{ steps.jar-file.outputs.jar }}" staging/
+
+      - name: Copy Dockerfile if exists
+        run: |
+          set -e
+          mkdir -p staging
+          if [ -n "${{ inputs.docker-file }}" ] && [ -f "${{ inputs.docker-file }}" ]; then
+            echo "Copying Dockerfile: ${{ inputs.docker-file }}"
+            cp "${{ inputs.docker-file }}" staging/
+          else
+            echo "No Dockerfile provided or file does not exist, skipping"
+          fi
 
       - name: upload artifact ${{ inputs.artifact-name }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ inputs.artifact-name }}
           path: staging
