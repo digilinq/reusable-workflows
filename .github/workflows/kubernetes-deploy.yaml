@@ -11,7 +11,7 @@ on:
         description: 'Which ref to check out'
         type: string
         required: false
-      image:
+      docker-images:
         description: 'The image to deploy'
         type: string
         required: true
@@ -38,6 +38,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
+      - name: Print docker image tag
+        run: echo ${{ inputs.docker-images }}
       - name: Set the Kubernetes context
         uses: azure/k8s-set-context@v3
         with:
@@ -50,4 +52,4 @@ jobs:
         with:
           namespace: ${{ inputs.namespace }}
           manifests: ${{ inputs.manifests }}            
-          images: ${{ inputs.image }}
+          images: ${{ inputs.docker-images }}
