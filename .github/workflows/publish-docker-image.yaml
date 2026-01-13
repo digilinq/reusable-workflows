@@ -12,7 +12,27 @@ on:
         type: string
         required: false
         default: 'artifact'
-
+      container-registry:
+        description: Container registry URL
+        type: string
+        required: true
+        default: 'ghcr.io'
+      namespace:
+        description: The namespace of the docker image
+        type: string
+        required: true
+      image-name:
+        description: The name of the docker image
+        type: string
+        required: true
+      username:
+        description: The username for the container registry
+        type: string
+        required: true
+      password:
+        description: The password for the container registry
+        type: string
+        required: true
 jobs:
   publish-docker-image:
     name: Create and Publish Docker Image
@@ -24,3 +44,11 @@ jobs:
         uses: actions/download-artifact@v7
         with:
           name: ${{ inputs.artifact-name }}
+      - name: Login to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ inputs.container-registry }}
+          username: ${{ inputs.username }}
+          password: ${{ inputs.password }}
+
