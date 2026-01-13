@@ -51,4 +51,27 @@ jobs:
           registry: ${{ inputs.container-registry }}
           username: ${{ inputs.container-registry-username }}
           password: ${{ secrets.container-registry-password }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ inputs.container-registry }}/${{ inputs.docker-image-namespace }}/${{ inputs.docker-image-name }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ inputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.version }}
+            type=semver,pattern={{major}},value=${{ inputs.version }}
+            type=ref,event=branch,suffix=-{{ sha }}
+            type=ref,event=pr
+          flavor: |
+            latest=auto
+      - name: Build and push
+        if: github.event_name != 'pull_request'
+        uses: docker/build-push-action@v5
+        with:
+          file: './Dockerfile'
+          context: .
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
 
