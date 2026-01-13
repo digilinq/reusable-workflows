@@ -63,8 +63,8 @@ jobs:
             type=semver,pattern={{major}},value=${{ inputs.version }}
             type=ref,event=branch,suffix=-{{ sha }}
             type=ref,event=pr
-          flavor: |
-            latest=auto
+#          flavor: |
+#            latest=auto
       - name: Build and push
         if: github.event_name != 'pull_request'
         uses: docker/build-push-action@v5
