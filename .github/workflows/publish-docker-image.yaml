@@ -33,6 +33,10 @@ on:
       container-registry-password:
         description: The password for the container registry
         required: true
+    outputs:
+      docker-image:
+        description: Docker image which pushed to the registry
+        value: ${{ jobs.publish-docker-image.outputs.docker-image }}
 jobs:
   publish-docker-image:
     name: Create and Publish Docker Image
