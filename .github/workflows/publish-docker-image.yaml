@@ -1,0 +1,26 @@
+name: publish docker image
+on:
+  workflow_call:
+    inputs:
+      runner:
+        description: What build agent to use
+        type: string
+        required: false
+        default: 'ubuntu-latest'
+      artifact-name:
+        description: The name of the artifact
+        type: string
+        required: false
+        default: 'artifact'
+
+jobs:
+  publish-docker-image:
+    name: Create and Publish Docker Image
+    runs-on: ${{ inputs.runner }}
+    outputs:
+      docker-image: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: ${{ inputs.artifact-name }}
