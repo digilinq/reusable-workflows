@@ -38,14 +38,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-      - name: Print docker image tag
-        run: echo ${{ inputs.docker-images }}
       - name: Set the Kubernetes context
         uses: azure/k8s-set-context@v3
         with:
           method: service-account
           k8s-url: ${{ secrets.kubernetes-url }}
           k8s-secret: ${{ secrets.kubernetes-secret }}
+      - name: Print docker image tag
+        run: echo ${{ inputs.docker-images }}
       - name: Deploy to the Kubernetes cluster
         if: github.event_name != 'pull_request'
         uses: azure/k8s-deploy@v4
